@@ -435,7 +435,173 @@ Metrics are collected during every pipeline execution.
 | Memory Manager | Maintain recent conversation |
 | Metrics Monitoring | Track pipeline performance |
 
+
 ---
+# Part 3 – Observability & Scalability
+
+## Objective
+
+Part 3 enhances the pipeline with production-oriented features for better performance monitoring, request tracing, and reduced API usage.
+
+---
+
+## Feature 1 – Response Caching
+
+### Problem
+
+Repeated queries trigger unnecessary LLM calls, increasing latency and API cost.
+
+### Solution
+
+An in-memory cache stores responses for repeated queries.
+
+### Benefits
+
+- Faster repeated responses
+- Reduced API cost
+- Fewer LLM calls
+
+---
+
+## Feature 2 – Request Tracking
+
+### Problem
+
+Tracing requests across multiple pipeline stages is difficult.
+
+### Solution
+
+Each pipeline execution is assigned a unique Request ID.
+
+### Benefits
+
+- Easier debugging
+- Better request traceability
+- Improved production monitoring
+
+---
+
+## Feature 3 – Configuration Management
+
+### Problem
+
+Hardcoded values make configuration difficult.
+
+### Solution
+
+Pipeline settings are centralized in a single configuration file.
+
+### Benefits
+
+- Easier maintenance
+- Cleaner codebase
+- Configurable pipeline behavior
+
+---
+
+## Feature 4 – Health Check API
+
+### Problem
+
+Production systems require a simple way to verify service health.
+
+### Solution
+
+A `/health` endpoint reports server status, uptime, and cache information.
+
+### Sample Response
+
+```json
+{
+  "success": true,
+  "status": "healthy",
+  "uptime": "35 seconds",
+  "cacheEntries": 1
+}
+```
+
+---
+
+## Feature 5 – Enhanced Metrics
+
+Additional runtime metrics are collected:
+
+- Cache Hits
+- Cache Misses
+- Success Requests
+- Failed Requests
+
+### Sample Output
+
+```json
+{
+  "executionTime": "1206 ms",
+  "cacheHits": 1,
+  "cacheMisses": 1,
+  "llmCalls": 2
+}
+```
+
+---
+
+## Updated Pipeline
+
+```text
+User Query
+      │
+      ▼
+Input Validation
+      │
+      ▼
+Request Tracking
+      │
+      ▼
+Cache Lookup
+      │
+      ├── Hit → Return Cached Response
+      │
+      └── Miss
+             │
+             ▼
+Conversation Memory
+      │
+      ▼
+Planner
+      │
+      ▼
+Retriever
+      │
+      ▼
+Smart Retrieval
+      │
+      ▼
+History Compression
+      │
+      ▼
+LLM Summarizer
+      │
+      ▼
+Response Validation
+      │
+      ▼
+Cache Response
+      │
+      ▼
+Final Response
+```
+
+---
+
+## Result
+
+The pipeline now provides:
+
+- Response caching
+- Request ID tracking
+- Centralized configuration
+- Health monitoring endpoint
+- Extended runtime metrics
+- Faster repeated requests with reduced API usage
 
 ## Result
 
