@@ -156,38 +156,295 @@ The optimized pipeline reduced the estimated prompt size from **374 tokens** to 
 - Modular agent pipeline architecture
 
 
-# Part 2
+# Part 2 – Reliability & Production Readiness
+## Objective
 
+While Part 1 focused on reducing token usage and API cost, Part 2 improves the reliability and robustness of the AI agent pipeline. The goal is to ensure that invalid inputs, temporary failures, slow API responses, and unexpected errors are handled gracefully without affecting the user experience.
+
+---
+
+## Feature 1 – Input Validation
+
+### Problem
+
+Invalid or malformed user queries can cause unnecessary LLM calls and unexpected failures.
+
+### Solution
+
+An input validation layer checks every query before it enters the pipeline.
+
+### Validation Rules
+
+- Query must not be empty
+- Query must be a string
+- Query length must not exceed the maximum limit
+
+### Workflow
+
+```text
+User Query
+     │
+     ▼
+Input Validator
+     │
+     ├── Invalid → Error
+     │
+     └── Valid
+            │
+            ▼
+        Planner
 ```
-               User
-                 │
-                 ▼
-        Input Validation
-                 │
-                 ▼
-        Conversation Memory
-                 │
-                 ▼
-              Planner
-                 │
-                 ▼
-            Retriever
-                 │
-                 ▼
-        Smart Retrieval
-                 │
-                 ▼
-           Summarizer
-                 │
-                 ▼
-      Response Validator
-                 │
-          ┌──────┴──────┐
-          ▼             ▼
-       Success       Retry Logic
-                          │
-                          ▼
-                    Fallback Response
 
+### Benefits
 
-```                    
+- Prevents invalid requests
+- Saves unnecessary API calls
+- Improves system stability
+
+---
+
+## Feature 2 – Response Validation
+
+### Problem
+
+LLM responses may occasionally be empty or malformed.
+
+### Solution
+
+Every generated response is validated before returning it to the user.
+
+### Validation Rules
+
+- Response must exist
+- Response must be a string
+- Response must contain meaningful content
+
+### Workflow
+
+```text
+LLM Response
+      │
+      ▼
+Response Validator
+      │
+      ├── Invalid → Retry
+      │
+      └── Valid
+             │
+             ▼
+        Return Response
+```
+
+### Benefits
+
+- Prevents invalid AI outputs
+- Improves response quality
+- Ensures consistent API behavior
+
+---
+
+## Feature 3 – Retry Mechanism
+
+### Problem
+
+Temporary API failures should not immediately fail the entire pipeline.
+
+### Solution
+
+Failed LLM operations are automatically retried up to three times before returning a fallback response.
+
+### Workflow
+
+```text
+LLM Call
+   │
+   ▼
+Success?
+ │
+ ├── Yes → Continue
+ │
+ └── No
+       │
+       ▼
+ Retry (Max 3 Attempts)
+       │
+       ▼
+ Still Failed?
+       │
+       ├── Yes → Fallback Response
+       └── No → Continue
+```
+
+### Benefits
+
+- Handles temporary failures
+- Improves reliability
+- Reduces failed requests
+
+---
+
+## Feature 4 – Timeout Protection
+
+### Problem
+
+LLM requests may occasionally take too long or become unresponsive.
+
+### Solution
+
+Each LLM request is wrapped inside a timeout mechanism using `Promise.race()`.
+
+### Workflow
+
+```text
+LLM Request
+      │
+      ▼
+ Timeout Monitor
+      │
+      ├── Completed → Continue
+      │
+      └── Timeout → Retry
+```
+
+### Benefits
+
+- Prevents hanging requests
+- Improves responsiveness
+- Keeps pipeline predictable
+
+---
+
+## Feature 5 – Memory Management
+
+### Problem
+
+Conversation state should be maintained efficiently during execution.
+
+### Solution
+
+A lightweight in-memory conversation manager stores recent messages with a configurable limit.
+
+### Workflow
+
+```text
+User
+ │
+ ▼
+Memory Manager
+ │
+ ▼
+Recent Conversation
+ │
+ ▼
+Pipeline
+```
+
+### Benefits
+
+- Maintains recent context
+- Prevents unlimited memory growth
+- Lightweight implementation
+
+---
+
+## Feature 6 – Pipeline Metrics
+
+### Problem
+
+Pipeline performance should be measurable for debugging and optimization.
+
+### Solution
+
+Metrics are collected during every pipeline execution.
+
+### Metrics Collected
+
+- Execution Time
+- Input Tokens
+- Optimized Tokens
+- Tokens Saved
+- Retrieved Documents
+- Retry Count
+- LLM Calls
+
+### Sample Output
+
+```json
+{
+  "executionTime": "615 ms",
+  "inputTokens": 374,
+  "optimizedTokens": 149,
+  "savedTokens": 225,
+  "retrievedDocuments": 5,
+  "retries": 0,
+  "llmCalls": 2
+}
+```
+
+---
+
+## Updated Pipeline
+
+```text
+                    User Query
+                         │
+                         ▼
+                Input Validation
+                         │
+                         ▼
+                Conversation Memory
+                         │
+                         ▼
+                     Planner
+                         │
+                         ▼
+                    Retriever
+                         │
+                         ▼
+                 Smart Retrieval
+                         │
+                         ▼
+             History Compression
+                         │
+                         ▼
+                  LLM Summarizer
+                         │
+                         ▼
+               Response Validation
+                         │
+                         ▼
+               Retry + Timeout Logic
+                         │
+                         ▼
+                Fallback (if needed)
+                         │
+                         ▼
+                   Final Response
+```
+
+---
+
+## Production Improvements
+
+| Feature | Purpose |
+| :------ | :------ |
+| Input Validation | Prevent invalid requests |
+| Response Validation | Ensure valid AI output |
+| Retry Mechanism | Recover from temporary failures |
+| Timeout Protection | Prevent hanging requests |
+| Memory Manager | Maintain recent conversation |
+| Metrics Monitoring | Track pipeline performance |
+
+---
+
+## Result
+
+The enhanced pipeline is now production-ready with:
+
+- Robust input validation
+- AI response validation
+- Automatic retry mechanism
+- Timeout protection
+- Lightweight conversation memory
+- Runtime metrics collection
+- Graceful fallback handling
