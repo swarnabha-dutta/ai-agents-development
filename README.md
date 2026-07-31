@@ -154,3 +154,40 @@ The optimized pipeline reduced the estimated prompt size from **374 tokens** to 
 - Relevance-based document retrieval
 - Lightweight token estimation
 - Modular agent pipeline architecture
+
+
+# Part 2
+
+```
+               User
+                 │
+                 ▼
+        Input Validation
+                 │
+                 ▼
+        Conversation Memory
+                 │
+                 ▼
+              Planner
+                 │
+                 ▼
+            Retriever
+                 │
+                 ▼
+        Smart Retrieval
+                 │
+                 ▼
+           Summarizer
+                 │
+                 ▼
+      Response Validator
+                 │
+          ┌──────┴──────┐
+          ▼             ▼
+       Success       Retry Logic
+                          │
+                          ▼
+                    Fallback Response
+
+
+```                    
