@@ -21,16 +21,52 @@ import { validateResponse } from "../validation/responseValidator.js";
 import { retry } from "../fallback/retry.js";
 import { fallbackResponse } from "../fallback/fallbackResponse.js";
 
-const memory = new MemoryManager();
+import cacheManager from "../cache/cacheManager.js";
+import { generateRequestId } from "../monitoring/requestTracker.js";
+import config from "../config/pipelineConfig.js";
 
+const memory = new MemoryManager();
 export async function runPipeline(query, history = []) {
+
     const metrics = new Metrics();
 
+    const requestId = generateRequestId();
+
+    console.log(`\n==============================`);
+    console.log(`[${requestId}] Pipeline Started`);
+    console.log(`==============================\n`);
+
     try {
+
         // ------------------------------------
         // Input Validation
         // ------------------------------------
         validateInput(query);
+
+        // ------------------------------------
+        // Cache Lookup
+        // ------------------------------------
+        const cachedResponse = cacheManager.get(query);
+
+        if (cachedResponse) {
+
+            metrics.incrementCacheHit();
+            metrics.incrementSuccess();
+
+            console.log(`[${requestId}] ✅ Cache Hit`);
+
+            return {
+                success: true,
+                cached: true,
+                requestId,
+                metrics: metrics.finish(),
+                answer: cachedResponse,
+            };
+        }
+
+        metrics.incrementCacheMiss();
+
+        console.log(`[${requestId}] ❌ Cache Miss`);
 
         // ------------------------------------
         // Store User Query
@@ -38,7 +74,7 @@ export async function runPipeline(query, history = []) {
         memory.add("user", query);
 
         // ------------------------------------
-        // Simulate failures (Debug)
+        // Simulate Failure
         // ------------------------------------
         const failureType = process.env.SIMULATE_FAILURE || "none";
         simulateFailure(failureType);
@@ -47,12 +83,14 @@ export async function runPipeline(query, history = []) {
         // Planner
         // ------------------------------------
         const plan = await retry(async () => {
+
             metrics.incrementLLMCalls();
 
             return await withTimeout(
                 planner(query),
-                10000
+                config.REQUEST_TIMEOUT
             );
+
         });
 
         logStep("Planner", plan);
@@ -88,21 +126,24 @@ export async function runPipeline(query, history = []) {
         const optimizedDocs = smartRetrieval(
             beforeDocuments,
             query,
-            5
+            config.MAX_RETRIEVED_DOCUMENTS
         );
 
-        metrics.setRetrievedDocuments(optimizedDocs.length);
-
+        metrics.setRetrievedDocuments(
+            optimizedDocs.length
+        );
         // ------------------------------------
         // Summarizer
         // ------------------------------------
         const result = await retry(async () => {
+
             metrics.incrementLLMCalls();
 
             return await withTimeout(
                 summarizer(query, optimizedDocs),
-                10000
+                config.REQUEST_TIMEOUT
             );
+
         });
 
         logStep("Summarizer", result);
@@ -113,6 +154,11 @@ export async function runPipeline(query, history = []) {
         validateDebugResponse(result);
 
         validateResponse(result.answer);
+
+        // ------------------------------------
+        // Store Response in Cache
+        // ------------------------------------
+        cacheManager.set(query, result.answer);
 
         // ------------------------------------
         // Store Assistant Response
@@ -130,21 +176,38 @@ export async function runPipeline(query, history = []) {
 
         metrics.setOptimizedTokens(afterTokens);
 
+        metrics.incrementSuccess();
+
+        console.log(`[${requestId}] ✅ Pipeline Completed`);
+
         return {
+
             success: true,
+
+            cached: false,
+
+            requestId,
 
             metrics: metrics.finish(),
 
             optimization: {
+
                 historyCompression: {
+
                     originalMessages: history.length,
+
                     optimizedMessages: optimizedHistory.length,
+
                 },
 
                 smartRetrieval: {
+
                     originalDocuments: beforeDocuments.length,
+
                     optimizedDocuments: optimizedDocs.length,
+
                 },
+
             },
 
             optimizedHistory,
@@ -154,12 +217,28 @@ export async function runPipeline(query, history = []) {
             documentsUsed: optimizedDocs.length,
 
             answer: result.answer,
+
         };
+
     } catch (error) {
-        console.error("\n========== PIPELINE ERROR ==========");
+
+        metrics.incrementFailure();
+
+        console.error("\n====================================");
+        console.error(`[${requestId}] PIPELINE ERROR`);
         console.error(error);
         console.error("====================================\n");
 
-        return fallbackResponse();
+        return {
+
+            ...fallbackResponse(),
+
+            requestId,
+
+            metrics: metrics.finish(),
+
+        };
+
     }
+
 }

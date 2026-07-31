@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 
 import chatRouter from "./routes/chat.js";
+import healthRouter from "./routes/health.js";
 
 const app = express();
 
@@ -15,8 +16,10 @@ app.get("/", (req, res) => {
     });
 });
 
+// Health Check Route
+app.use("/health", healthRouter);
 
-
+// Chat Route
 app.use("/api/chat", chatRouter);
 
 export default app;
