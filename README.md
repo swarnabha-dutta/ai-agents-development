@@ -591,26 +591,248 @@ Final Response
 ```
 
 ---
+# Part 3 – CI/CD & Deployment
+
+## Objective
+
+The final part of the assignment focuses on automating the development workflow and preparing the AI agent for production deployment. A Continuous Integration (CI) pipeline was implemented using GitHub Actions to automatically validate code quality and run tests before deployment. The deployment workflow is structured for staging deployments, secure secret management, and safe rollback procedures.
+
+---
+
+## Feature 1 – Continuous Integration (GitHub Actions)
+
+### Problem
+
+Manually verifying code quality before every commit is time-consuming and error-prone.
+
+### Solution
+
+A GitHub Actions workflow automatically runs whenever code is pushed to the repository or a Pull Request is opened.
+
+### CI Workflow
+
+```text
+Push / Pull Request
+          │
+          ▼
+Checkout Repository
+          │
+          ▼
+Install Dependencies
+          │
+          ▼
+Run ESLint
+          │
+          ▼
+Run Vitest Tests
+          │
+          ▼
+Pipeline Success
+```
+
+### Benefits
+
+- Automated code quality checks
+- Early bug detection
+- Consistent development workflow
+- Prevents broken code from being merged
+
+---
+
+## Feature 2 – Automated Staging Deployment
+
+### Problem
+
+Manual deployments increase the risk of human error and inconsistent releases.
+
+### Solution
+
+After all CI checks pass, merging into the **main** branch triggers the deployment stage. The current workflow is prepared for deployment to a staging environment and can easily be integrated with services such as Render or Railway.
+
+### Deployment Workflow
+
+```text
+Merge to main
+       │
+       ▼
+GitHub Actions
+       │
+       ▼
+Run Lint
+       │
+       ▼
+Run Tests
+       │
+       ▼
+Deploy to Staging
+```
+
+### Benefits
+
+- Consistent deployments
+- Faster release cycle
+- Reduced manual effort
+- Easy integration with cloud platforms
+
+---
+
+## Feature 3 – Secrets Management
+
+### Problem
+
+Hardcoding API keys inside the repository exposes sensitive credentials.
+
+### Solution
+
+Sensitive information is stored securely using **GitHub Actions Secrets** instead of committing it to the repository.
+
+### Secret Flow
+
+```text
+GitHub Repository
+        │
+        ▼
+Secrets & Variables
+        │
+        ▼
+GitHub Actions
+        │
+        ▼
+Environment Variables
+        │
+        ▼
+Application
+```
+
+### Managed Secrets
+
+- GEMINI_API_KEY
+- Deployment Tokens
+- Future API Credentials
+
+### Benefits
+
+- Secure credential management
+- No secrets committed to Git
+- Easy key rotation
+- Secure CI/CD execution
+
+---
+
+## Feature 4 – Automated Testing
+
+Before every deployment, the pipeline automatically executes:
+
+- ESLint
+- Vitest Unit Tests
+
+This ensures that invalid code never reaches the deployment stage.
+
+### Testing Workflow
+
+```text
+Source Code
+      │
+      ▼
+ESLint
+      │
+      ▼
+Vitest
+      │
+      ▼
+Deployment
+```
+
+### Benefits
+
+- Improved code quality
+- Prevents regressions
+- Faster debugging
+- Reliable deployments
+
+---
+
+## Feature 5 – Rollback Strategy
+
+### Problem
+
+A production deployment may occasionally introduce unexpected issues.
+
+### Solution
+
+If a deployment fails, the pipeline follows a structured rollback process.
+
+### Rollback Workflow
+
+```text
+Deployment Failure
+        │
+        ▼
+Pause Deployment
+        │
+        ▼
+Review GitHub Actions Logs
+        │
+        ▼
+Identify Failing Commit
+        │
+        ▼
+Rollback Previous Stable Release
+        │
+        ▼
+Verify Health Endpoint
+        │
+        ▼
+Investigate Root Cause
+```
+
+### Benefits
+
+- Faster recovery
+- Reduced production downtime
+- Safer releases
+- Improved operational reliability
+
+---
+
+## CI/CD Pipeline Overview
+
+```text
+Developer Push
+        │
+        ▼
+GitHub Actions
+        │
+        ▼
+Checkout Repository
+        │
+        ▼
+Install Dependencies
+        │
+        ▼
+Run ESLint
+        │
+        ▼
+Run Unit Tests
+        │
+        ▼
+Deploy to Staging (main branch)
+```
+
+---
 
 ## Result
 
-The pipeline now provides:
+The CI/CD pipeline improves software quality and deployment reliability by providing:
 
-- Response caching
-- Request ID tracking
-- Centralized configuration
-- Health monitoring endpoint
-- Extended runtime metrics
-- Faster repeated requests with reduced API usage
+- Automated linting with ESLint
+- Automated unit testing using Vitest
+- GitHub Actions based CI pipeline
+- Staging deployment workflow
+- Secure secret management
+- Production rollback strategy
+- Faster and more reliable software delivery
 
-## Result
-
-The enhanced pipeline is now production-ready with:
-
-- Robust input validation
-- AI response validation
-- Automatic retry mechanism
-- Timeout protection
-- Lightweight conversation memory
+---
 - Runtime metrics collection
 - Graceful fallback handling
